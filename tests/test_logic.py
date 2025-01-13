@@ -32,9 +32,9 @@ def test_generate_slug_uniqueness() -> None:
     generated_slugs: dict[str, str] = {}
     for input_str in inputs:
         slug = generate_slug(input_str)
-        assert (
-            slug not in generated_slugs.values()
-        ), f"Duplicate slug '{slug}' generated for input '{input_str}'"
+        assert slug not in generated_slugs.values(), (
+            f"Duplicate slug '{slug}' generated for input '{input_str}'"
+        )
         generated_slugs[input_str] = slug
 
     assert len(generated_slugs) == len(

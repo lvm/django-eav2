@@ -17,9 +17,9 @@ from .value import Value
 
 __all__ = [
     "Attribute",
+    "EAVModelMeta",
+    "Entity",
     "EnumGroup",
     "EnumValue",
     "Value",
-    "Entity",
-    "EAVModelMeta",
 ]
