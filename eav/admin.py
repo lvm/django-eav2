@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, ClassVar, Dict, List, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, ClassVar, Dict, List, Union
 
 from django.contrib import admin
 from django.contrib.admin.options import InlineModelAdmin, ModelAdmin
