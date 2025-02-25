@@ -99,9 +99,11 @@ class Entity:
         """
         return self.__dict__[attribute_slug]
 
-    def save(self):
+    def save(self, *, commit=True):
         """Saves all the EAV values that have been set on this entity."""
-        for attribute in self.get_all_attributes():
+        values = {}
+        attributes = self.get_all_attributes()
+        for attribute in attributes:
             if self._hasattr(attribute.slug):
                 attribute_value = self._getattr(attribute.slug)
                 if (
@@ -113,7 +115,12 @@ class Entity:
                     and attribute_value is not None
                 ):
                     attribute_value = EnumValue.objects.get(value=attribute_value)
-                attribute.save_value(self.instance, attribute_value)
+                if commit:
+                    attribute.save_value(self.instance, attribute_value)
+                values[attribute.slug] = attribute_value
+        if not commit:
+            attributes_value = self.save_bulk(values, attributes)
+            Value.objects.bulk_create(attributes_value)
 
     def validate_attributes(self):
         """
@@ -199,6 +206,50 @@ class Entity:
             for i in m.eav: print(i)
         """
         return iter(self.get_values())
+
+    def save_bulk(
+        self,
+        eav_values,
+        attributes,
+    ):
+        """
+        Prepare a list of EAV Value objects for bulk creation.
+
+        This method takes a dictionary of EAV attribute values and a list of Attribute
+        objects, and returns a list of Value objects that can be bulk created to update
+        the EAV data for the current Entity instance.
+
+        Args:
+        eav_values: A dictionary mapping attribute slugs to their new values.
+        attributes: A list of Attribute objects associated with the current Entity.
+
+        Returns:
+        A list of Value objects that can be bulk created.
+        """
+        eav_values_to_create = []
+        if not eav_values:
+            return eav_values_to_create
+
+        ct = ContentType.objects.get_for_model(self.instance)
+        attribute_slugs = list(eav_values.keys())
+
+        for attr_slug in attribute_slugs:
+            entity_data = {
+                "entity_ct": ct,
+                "attribute": next(
+                    (
+                        attribute
+                        for attribute in attributes
+                        if attribute.slug == attr_slug
+                    ),
+                    None,
+                ),
+                get_entity_pk_type(self): self.pk,
+                "value": eav_values[attr_slug],
+            }
+            eav_values_to_create.append(Value(**entity_data))
+
+        return eav_values_to_create
 
 
 class EAVModelMeta(ModelBase):
